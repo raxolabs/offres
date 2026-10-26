@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Options B.E.M.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout : bandeau d'en-tête marine (comme la Livraison et le Guide), liste d'options à cocher,
+   récapitulatif collant (colonne à droite sur ordinateur, barre en bas sur téléphone). */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --ink:#1d2733; --muted:#5d6b7a; --line:#dde2e8;
+  --navy:#1f3a5f; --navy-2:#2a4d78; --ochre:#c8862a; --ochre-ink:#9a5f12; --ochre-soft:#fbf3e6;
+  --ok:#2e7d4f; --on-navy:#ffffff; --on-navy-muted:#c9d5e6;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161f; --surface:#17202c; --ink:#e7ecf2; --muted:#9aa8b8; --line:#2a3644;
+  --navy:#16263d; --navy-2:#20375a; --ochre:#d99a44; --ochre-ink:#e8b06a; --ochre-soft:#2a2216;
+  --ok:#5cc28a; --on-navy:#ffffff; --on-navy-muted:#aebcd0; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#10161f; --surface:#17202c; --ink:#e7ecf2; --muted:#9aa8b8; --line:#2a3644;
+  --navy:#16263d; --navy-2:#20375a; --ochre:#d99a44; --ochre-ink:#e8b06a; --ochre-soft:#2a2216;
+  --ok:#5cc28a; --on-navy:#ffffff; --on-navy-muted:#aebcd0; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.hero{background:linear-gradient(135deg,var(--navy),var(--navy-2));color:var(--on-navy)}
+header.hero .wrap{padding-block:40px 36px;display:grid;gap:10px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ochre)}
+h1{margin:0;font-size:clamp(28px,5vw,42px);line-height:1.1;font-weight:800;text-wrap:balance}
+.lead{margin:0;max-width:62ch;color:var(--on-navy-muted)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:10px;font-size:14px;color:var(--on-navy-muted)}
+.meta b{display:block;color:var(--on-navy);font-weight:600}
+main .wrap{padding-block:28px 140px;display:grid;gap:28px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){main .wrap{grid-template-columns:minmax(0,1fr) 320px;padding-bottom:48px;align-items:start}}
+h2{margin:0 0 4px;font-size:20px;font-weight:700;text-wrap:balance}
+.hint{margin:0 0 14px;color:var(--muted);font-size:14px}
+ol.options{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.opt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:start;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--ochre)}
+.opt:has(input:checked){border-color:var(--ochre);background:var(--ochre-soft)}
+.opt input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--ochre);cursor:pointer}
+.opt input:focus-visible{outline:3px solid var(--ochre);outline-offset:2px}
+.opt .num{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em}
+.opt .name{font-weight:700;display:block;margin:1px 0 4px}
+.opt .desc{color:var(--muted);font-size:14.5px}
+.opt .price{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.free{margin-top:18px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;font-size:14.5px;color:var(--muted)}
+.free b{color:var(--ink)}
+.cond{margin-top:24px;font-size:14px;color:var(--muted);display:grid;gap:6px}
+.cond h3{margin:0 0 4px;font-size:15px;color:var(--ink)}
+.cond ol{margin:0;padding-left:20px;display:grid;gap:4px}
+aside.summary{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:12px}
+@media (min-width:900px){aside.summary{position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}}
+@media (max-width:899px){aside.summary{position:fixed;left:0;right:0;bottom:0;border-radius:14px 14px 0 0;border-width:1px 0 0;z-index:5;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  box-shadow:0 -6px 24px rgba(0,0,0,.12);gap:8px}
+  aside.summary .rows,aside.summary .tiers{display:none}
+  aside.summary .tierhint{font-size:13px}}
+.sum-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.sum-head .label{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.total{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.rows{display:grid;gap:4px;font-size:14px;font-variant-numeric:tabular-nums}
+.rows div{display:flex;justify-content:space-between;gap:12px}
+.rows .disc{color:var(--ok);font-weight:600}
+.tierhint{margin:0;font-size:14px;color:var(--ochre-ink);font-weight:500;min-height:1.5em}
+.tiers{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.tiers td{padding:4px 0;border-top:1px solid var(--line);color:var(--muted)}
+.tiers td:last-child{text-align:right}
+.tiers tr.on td{color:var(--ink);font-weight:700}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-weight:700;border-radius:8px;padding:12px 16px;cursor:pointer;border:1px solid transparent}
+button:focus-visible{outline:3px solid var(--ochre);outline-offset:2px}
+.primary{flex:1 1 auto;background:var(--navy);color:var(--on-navy)}
+.primary:hover{background:var(--navy-2)}
+.ghost{background:transparent;color:var(--muted);border-color:var(--line);font-weight:600}
+#after{display:grid;gap:8px;font-size:14px}
+#after p{margin:0}
+#mailtext{width:100%;min-height:120px;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
+.addr{font-weight:700;user-select:all}
+footer{padding-block:0 32px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">B.E.M. · Suivi des PV de chantier</div>
+    <h1>Options d'amélioration</h1>
+    <p class="lead">Le rodage est terminé et le suivi des PV tourne tel quel. Ces options sont facultatives : coche celles qui te seraient utiles, le total et la remise se calculent tout seuls.</p>
+    <div class="meta">
+      <span>Pour<b id="m-client">Jérôme Sarrail</b></span>
+      <span>Proposé par<b>Etienne Sarrail (Raxolabs)</b></span>
+      <span>Valable jusqu'au<b id="m-valid">25 novembre 2026</b></span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section aria-labelledby="t-opts">
+      <h2 id="t-opts">Les options</h2>
+      <p class="hint">Prix par option, réalisation et mise en service comprises. TVA non applicable, art. 293 B du CGI.</p>
+      <ol class="options" id="options"></ol>
+
+      <div class="free"><b>Inclus sans frais : le disjoncteur quotidien.</b> Si un nombre anormal de documents arrive en une journée (panne, boucle, envoi en masse), le traitement s'arrête de lui-même et une alerte m'est envoyée. Ajouté avec ou sans options.</div>
+
+      <div class="cond">
+        <h3>Et ensuite</h3>
+        <ol>
+          <li>Tu envoies ton choix avec le bouton du récapitulatif.</li>
+          <li>Je t'envoie un devis officiel avec les options choisies et la remise, à signer.</li>
+          <li>Le délai de réalisation est indiqué sur le devis ; le suivi des PV continue de fonctionner pendant les travaux.</li>
+          <li>Chaque option est garantie un mois après sa mise en service : un défaut constaté pendant ce mois est corrigé sans frais.</li>
+        </ol>
+      </div>
+    </section>
+
+    <aside class="summary" aria-live="polite">
+      <div class="sum-head"><span class="label" id="s-count">Aucune option</span><span class="total" id="s-total">0 €</span></div>
+      <div class="rows">
+        <div><span>Sous-total</span><span id="s-sub">0 €</span></div>
+        <div class="disc"><span id="s-disc-l">Remise</span><span id="s-disc">0 €</span></div>
+      </div>
+      <p class="tierhint" id="s-hint"></p>
+      <table class="tiers" id="tiers" aria-label="Remise selon le nombre d'options"><tbody></tbody></table>
+      <div class="btns">
+        <button class="primary" id="send" type="button">Envoyer mon choix</button>
+        <button class="ghost" id="none" type="button">Aucune option</button>
+      </div>
+      <div id="after" hidden>
+        <p>Ta messagerie s'ouvre avec le message prêt à envoyer. Si elle ne s'ouvre pas, copie ce texte et envoie-le à <span class="addr" id="addr"></span> :</p>
+        <textarea id="mailtext" readonly></textarea>
+        <button class="ghost" id="copy" type="button">Copier le texte</button>
+      </div>
+    </aside>
+  </div>
+</main>
+<footer><div class="wrap">Raxolabs · Etienne Sarrail, micro-entrepreneur · raxolabs@gmail.com</div></footer>
+
+<script>
+// ===== CONFIG — seule partie à modifier pour un autre client =====
+const CONFIG = {
+  client: 'Jérôme Sarrail',
+  clientCourt: 'B.E.M.',
+  destinataire: 'raxolabs@gmail.com',
+  validite: '25 novembre 2026',
+  // Remise selon le nombre d'options : [à partir de N options, pourcentage]
+  paliers: [[1, 0], [2, 10], [3, 15], [6, 20], [9, 25]],
+  options: [
+    ['Image du tableau de convocation + lien vers le PV', 250, 'Le récap du matin montre l\'image du tableau de convocation, découpée dans le PV, et un lien pour ouvrir le PV complet. Tu vois d\'un coup d\'œil si tu es convoqué, sans ouvrir le PDF.'],
+    ['Convocations dans l\'agenda + rappel la veille', 200, 'Chaque convocation lue dans un PV arrive avec un rendez-vous à ajouter en un clic à l\'agenda du téléphone, avec un rappel la veille. Utile seulement si tu utilises un agenda.'],
+    ['Un dossier Dropbox par chantier', 200, 'Les PV sont rangés automatiquement dans un dossier au nom de leur chantier. Les PV déjà archivés sont triés de la même façon.'],
+    ['Alerte « autre entreprise sur le lot »', 150, 'Un mail te prévient quand un PV attribue des points de menuiserie extérieure à une entreprise que tu ne suis pas sur ce chantier.'],
+    ['Récap mis en page', 150, 'Le récap du matin est présenté avec des titres, des chantiers bien séparés et une mise en page claire, sur téléphone comme sur ordinateur.'],
+    ['Mails de PV marqués « lus » dans Orange', 250, 'Une fois un PV traité, son mail passe en « lu » dans la boîte Orange. Ce qui reste non lu est ce qui demande vraiment ton attention.'],
+    ['Récap d\'un chantier à la demande', 200, 'Tu envoies un mail du type « état Symphonia » et tu reçois en retour les points encore ouverts du chantier et la prochaine réunion.'],
+    ['Alerte « point qui traîne »', 200, 'Le récap signale un point resté ouvert depuis plusieurs PV (ex. « validation échantillon en attente depuis 5 semaines »).'],
+    ['Échéances repérées + rappel', 200, 'Les « à fournir avant le … » qui te concernent sont repérés dans les PV, avec un rappel quelques jours avant la date.'],
+    ['Bilan du lundi', 150, 'Un mail chaque lundi avec l\'état de tous tes chantiers : points encore ouverts et prochaines réunions.'],
+    ['Destinataire supplémentaire', 100, 'Le récap, ou seulement celui d\'un chantier, part aussi à une autre personne (secrétaire, chef d\'équipe).'],
+    ['Clôture d\'un chantier', 100, 'Un lien pour terminer un chantier : le suivi s\'arrête, ses PV suivants sont ignorés et son dossier est archivé.']
+  ]
+};
+// ===============================================================
+
+const eur = n => n.toLocaleString('fr-FR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
+const $ = id => document.getElementById(id);
+$('m-client').textContent = CONFIG.client;
+$('m-valid').textContent = CONFIG.validite;
+$('addr').textContent = CONFIG.destinataire;
+
+const list = $('options');
+CONFIG.options.forEach(([name, price, desc], i) => {
+  const li = document.createElement('li');
+  li.innerHTML = `<label class="opt" for="opt-${i + 1}">
+    <input type="checkbox" id="opt-${i + 1}" value="${i}">
+    <span><span class="num">OPTION ${i + 1}</span><span class="name"></span><span class="desc"></span></span>
+    <span class="price">${eur(price)}</span></label>`;
+  li.querySelector('.name').textContent = name;
+  li.querySelector('.desc').textContent = desc;
+  list.appendChild(li);
+});
+
+const tiersBody = $('tiers').querySelector('tbody');
+const labelPalier = (k) => {
+  const [from, pct] = CONFIG.paliers[k]; const next = CONFIG.paliers[k + 1];
+  const range = !next ? from + ' options et plus'
+    : next[0] - 1 === from ? from + (from === 1 ? ' option' : ' options')
+    : from + ' à ' + (next[0] - 1) + ' options';
+  return [range, pct ? '−' + pct + ' %' : 'aucune remise'];
+};
+CONFIG.paliers.forEach((_, k) => {
+  const tr = document.createElement('tr'); const [a, b] = labelPalier(k);
+  tr.innerHTML = '<td></td><td></td>'; tr.cells[0].textContent = a; tr.cells[1].textContent = b;
+  tiersBody.appendChild(tr);
+});
+
+function state() {
+  const chosen = [...list.querySelectorAll('input:checked')].map(c => Number(c.value));
+  const n = chosen.length;
+  const sub = chosen.reduce((s, i) => s + CONFIG.options[i][1], 0);
+  let k = -1; CONFIG.paliers.forEach(([from], j) => { if (n >= from) k = j; });
+  const pct = k >= 0 ? CONFIG.paliers[k][1] : 0;
+  const disc = Math.round(sub * pct) / 100;
+  return { chosen, n, sub, pct, disc, total: sub - disc, k };
+}
+
+function render() {
+  const s = state();
+  $('s-count').textContent = s.n === 0 ? 'Aucune option' : s.n + (s.n > 1 ? ' options' : ' option');
+  $('s-total').textContent = eur(s.total);
+  $('s-sub').textContent = eur(s.sub);
+  $('s-disc-l').textContent = s.pct ? 'Remise −' + s.pct + ' %' : 'Remise';
+  $('s-disc').textContent = s.disc ? '−' + eur(s.disc) : '0 €';
+  [...tiersBody.rows].forEach((tr, j) => tr.classList.toggle('on', j === s.k));
+  const next = CONFIG.paliers.find(([from, pct]) => from > s.n && pct > s.pct);
+  $('s-hint').textContent = next
+    ? (s.n === 0 ? 'Remise à partir de ' + next[0] + ' options.' : 'Encore ' + (next[0] - s.n) + ' option' + (next[0] - s.n > 1 ? 's' : '') + ' pour passer à −' + next[1] + ' %.')
+    : 'Remise maximale atteinte.';
+  $('send').disabled = s.n === 0;
+  $('send').style.opacity = s.n === 0 ? .55 : 1;
+  $('after').hidden = true;
+}
+list.addEventListener('change', render);
+render();
+
+function message(aucune) {
+  const s = state();
+  const lignes = aucune ? ['Pas d\'option pour l\'instant.'] : [
+    'Options choisies :',
+    ...s.chosen.map(i => '- ' + (i + 1) + '. ' + CONFIG.options[i][0] + ' : ' + eur(CONFIG.options[i][1])),
+    '',
+    'Sous-total : ' + eur(s.sub),
+    'Remise' + (s.pct ? ' (−' + s.pct + ' %)' : '') + ' : ' + (s.disc ? '−' + eur(s.disc) : '0 €'),
+    'Total : ' + eur(s.total)
+  ];
+  return {
+    subject: 'Options du suivi des PV — ' + CONFIG.clientCourt + (aucune ? ' : aucune' : ' : ' + s.n + ' option' + (s.n > 1 ? 's' : '')),
+    body: ['Salut,', '', ...lignes, '', 'Tu peux m\'envoyer le devis.', '', CONFIG.client].join('\n')
+      .replace('Tu peux m\'envoyer le devis.', aucune ? 'Merci.' : 'Tu peux m\'envoyer le devis.')
+  };
+}
+function envoyer(aucune) {
+  const m = message(aucune);
+  $('mailtext').value = 'Objet : ' + m.subject + '\n\n' + m.body;
+  $('after').hidden = false;
+  location.href = 'mailto:' + CONFIG.destinataire + '?subject=' + encodeURIComponent(m.subject) + '&body=' + encodeURIComponent(m.body);
+}
+$('send').addEventListener('click', () => envoyer(false));
+$('none').addEventListener('click', () => envoyer(true));
+$('copy').addEventListener('click', async () => {
+  const t = $('mailtext');
+  try { await navigator.clipboard.writeText(t.value); $('copy').textContent = 'Texte copié'; }
+  catch (_) { t.focus(); t.select(); $('copy').textContent = 'Texte sélectionné : Ctrl+C'; }
+});
+</script>
+</body>
+</html>
