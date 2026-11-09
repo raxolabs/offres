@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offre Suivi des PV de chantier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+
+/* Plan de chantier : fond béton clair, encre bleu nuit, orange de signalisation pour ce qui compte. Une chaîne horizontale de 5 postes, les PV la traversent en continu. */
+:root {
+  --beton: #ECEEEB;
+  --carte: #F8F9F7;
+  --encre: #1C2A3A;
+  --gris: #6B7682;
+  --trait: #C9CEC9;
+  --orange: #E8641B;
+  --vert: #2F8A5B;
+  --f-titre: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --f-texte: "IBM Plex Sans", "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--beton); color: var(--encre); font-family: var(--f-texte); }
+.page { max-width: 1040px; margin: 0 auto; padding: 28px 20px 32px; display: flex; flex-direction: column; gap: 18px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+.surtitre { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--orange); }
+h1 { font-family: var(--f-titre); font-weight: 800; font-size: clamp(1.5rem, 3.4vw, 2.2rem); line-height: 1.1; margin: 0; text-wrap: balance; }
+.chapo { margin: 0; color: var(--gris); font-size: 1.02rem; max-width: 60ch; }
+.chapo b { color: var(--encre); font-weight: 600; }
+.scene { background: var(--carte); border: 1px solid var(--trait); border-radius: 10px; overflow: hidden; }
+svg { display: block; width: 100%; height: auto; }
+.compteurs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--trait); }
+.compteurs div { padding: 10px 16px; display: flex; flex-direction: column; gap: 2px; }
+.compteurs div + div { border-left: 1px solid var(--trait); }
+.compteurs b { font-family: var(--f-mono); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.compteurs span { font-size: .8rem; color: var(--gris); }
+.compteurs .ign b { color: var(--gris); }
+.compteurs .rec b { color: var(--orange); }
+ol.etapes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; counter-reset: e; }
+ol.etapes li { counter-increment: e; background: var(--carte); border: 1px solid var(--trait); border-top: 3px solid var(--trait); border-radius: 6px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; transition: border-color .3s, transform .3s; }
+ol.etapes li::before { content: counter(e, decimal-leading-zero); font-family: var(--f-mono); font-size: .72rem; color: var(--gris); }
+ol.etapes li.actif { border-top-color: var(--orange); transform: translateY(-2px); }
+ol.etapes h2 { font-family: var(--f-titre); font-weight: 600; font-size: .98rem; margin: 0; }
+ol.etapes p { margin: 0; font-size: .84rem; line-height: 1.42; color: var(--gris); }
+footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .8rem; color: var(--gris); border-top: 1px solid var(--trait); padding-top: 12px; }
+footer b { font-family: var(--f-titre); color: var(--encre); letter-spacing: .02em; }
+.lbl { font-family: var(--f-titre); font-weight: 600; font-size: 15px; fill: var(--encre); }
+.sous { font-family: var(--f-texte); font-size: 12px; fill: var(--gris); }
+.mono { font-family: var(--f-mono); font-size: 12px; }
+.poste rect.fond { fill: #fff; stroke: var(--trait); stroke-width: 1.5; transition: stroke .3s; }
+.poste.actif rect.fond { stroke: var(--orange); stroke-width: 2.5; }
+.ico { fill: none; stroke: var(--encre); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 760px) {
+  ol.etapes { grid-template-columns: 1fr; }
+  .compteurs b { font-size: 1.1rem; }
+}
+@media (prefers-reduced-motion: reduce) { ol.etapes li { transition: none; } }
+
+/* Page d'offre : même monde que l'animation. Colonne de lecture, sections numérotées, composeur de devis à droite sur grand écran. */
+.page { gap: 44px; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.sec-tete { display: flex; flex-direction: column; gap: 4px; }
+.sec-tete h2 { font-family: var(--f-titre); font-weight: 800; font-size: clamp(1.25rem, 2.6vw, 1.6rem); margin: 0; text-wrap: balance; }
+.sec-tete p { margin: 0; color: var(--gris); max-width: 65ch; }
+.chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--trait); border: 1px solid var(--trait); border-radius: 10px; overflow: hidden; }
+.chiffres div { background: var(--carte); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.chiffres b { font-family: var(--f-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.chiffres div:first-child b { color: var(--orange); }
+.chiffres span { font-size: .85rem; color: var(--gris); }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { font: 600 .95rem var(--f-texte); border-radius: 6px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--encre); background: var(--encre); color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.btn:hover { background: #2B3D52; }
+.btn.clair { background: transparent; color: var(--encre); border-color: var(--trait); }
+.btn.clair:hover { border-color: var(--encre); }
+.btn:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+.btn[disabled] { opacity: .5; cursor: default; }
+ul.inclus { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+ul.inclus li { background: var(--carte); border: 1px solid var(--trait); border-left: 3px solid var(--vert); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+ul.inclus b { font-weight: 600; }
+ul.inclus span { font-size: .9rem; color: var(--gris); }
+ol.deroule { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; counter-reset: d; border: 1px solid var(--trait); border-radius: 10px; overflow: hidden; background: var(--carte); }
+ol.deroule li { counter-increment: d; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+ol.deroule li + li { border-left: 1px solid var(--trait); }
+ol.deroule li::before { content: counter(d); font-family: var(--f-mono); font-size: .8rem; color: #fff; background: var(--encre); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; }
+ol.deroule b { font-family: var(--f-titre); font-weight: 600; }
+ol.deroule .duree { font-family: var(--f-mono); font-size: .78rem; color: var(--orange); }
+ol.deroule span { font-size: .88rem; color: var(--gris); }
+.tab { width: 100%; border-collapse: collapse; background: var(--carte); border: 1px solid var(--trait); border-radius: 10px; overflow: hidden; font-size: .95rem; }
+.tab th, .tab td { text-align: left; padding: 12px 16px; border-top: 1px solid var(--trait); vertical-align: top; }
+.tab tr:first-child th, .tab tr:first-child td { border-top: 0; }
+.tab th { font-weight: 600; width: 34%; }
+.tab td.p { font-family: var(--f-mono); white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; width: 22%; }
+.tab small { display: block; color: var(--gris); font-size: .85rem; margin-top: 2px; }
+.composeur { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+ol.options { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.opt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; padding: 12px 14px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; cursor: pointer; align-items: start; }
+.opt:hover { border-color: var(--orange); }
+.opt:has(input:checked) { border-color: var(--orange); background: #FDF1E9; }
+.opt input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--orange); cursor: pointer; }
+.opt .nom { font-weight: 600; display: block; }
+.opt .desc { font-size: .88rem; color: var(--gris); }
+.opt .prix { font-family: var(--f-mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.resume-devis { position: sticky; top: 16px; background: var(--carte); border: 1px solid var(--trait); border-top: 3px solid var(--orange); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.resume-devis .total { font-family: var(--f-mono); font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+.lignes { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.lignes div { display: flex; justify-content: space-between; gap: 10px; }
+.lignes .remise { color: var(--vert); font-weight: 600; }
+.indice { margin: 0; font-size: .85rem; color: var(--orange); min-height: 1.3em; }
+.paliers { margin: 0; font-size: .8rem; color: var(--gris); }
+label.champ { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--gris); }
+label.champ input { font: inherit; font-size: .95rem; color: var(--encre); padding: 9px 10px; border: 1px solid var(--trait); border-radius: 6px; background: #fff; }
+#apres { display: flex; flex-direction: column; gap: 8px; font-size: .85rem; }
+#apres p { margin: 0; }
+#texte-mail { width: 100%; min-height: 130px; font: 12px/1.45 var(--f-mono); color: var(--encre); background: var(--beton); border: 1px solid var(--trait); border-radius: 6px; padding: 8px; resize: vertical; }
+.adr { font-weight: 600; user-select: all; }
+ul.besoins { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+.faq { display: flex; flex-direction: column; gap: 8px; }
+.faq details { background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 12px 16px; }
+.faq summary { font-weight: 600; cursor: pointer; }
+.faq p { margin: 8px 0 0; color: var(--gris); max-width: 70ch; }
+.mentions { font-size: .8rem; color: var(--gris); }
+@media (max-width: 860px) {
+  .composeur { grid-template-columns: 1fr; }
+  .resume-devis { position: static; }
+  ol.deroule { grid-template-columns: 1fr 1fr; }
+  ol.deroule li:nth-child(3) { border-left: 0; }
+  ol.deroule li:nth-child(n+3) { border-top: 1px solid var(--trait); }
+}
+@media (max-width: 560px) {
+  ul.inclus, ol.deroule, .chiffres { grid-template-columns: 1fr; }
+  ol.deroule li + li { border-left: 0; border-top: 1px solid var(--trait); }
+  .tab th, .tab td { display: block; width: auto; text-align: left; border-top: 0; padding: 4px 14px; }
+  .tab tr { display: block; border-top: 1px solid var(--trait); padding: 8px 0; }
+  .tab tr:first-child { border-top: 0; }
+  .tab td.p { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <span class="surtitre">ES Labs · Offre pour les entreprises du BTP</span>
+    <h1>Suivi automatique des PV de chantier</h1>
+    <p class="chapo">Chaque compte-rendu de chantier est lu à votre place. Vous recevez <b>un seul mail chaque matin</b> avec ce qui concerne <b>votre lot</b> : les nouveautés, les points ouverts et les réunions où vous êtes convoqué.</p>
+    <div class="cta" style="margin-top:8px">
+      <a class="btn" href="#devis">Composer mon devis</a>
+      <a class="btn clair" href="#couts">Voir tous les coûts</a>
+    </div>
+  </header>
+
+  <div class="chiffres">
+    <div><b>3 000 €</b><span>installation, rodage compris</span></div>
+    <div><b>≈ 15 €</b><span>par mois de fonctionnement (serveur et IA)</span></div>
+    <div><b>6 semaines</b><span>de suivi après la mise en service : 2 de rodage, 4 de garantie</span></div>
+  </div>
+
+  <section aria-labelledby="t-fonct">
+    <div class="sec-tete">
+      <h2 id="t-fonct">Comment ça marche</h2>
+      <p>En service depuis octobre 2026 chez une entreprise de menuiserie extérieure qui suit 47 chantiers.</p>
+    </div>
+  <div class="scene">
+    <svg id="svg" viewBox="0 0 1000 400" role="img" aria-labelledby="svg-t">
+      <title id="svg-t">Les PV arrivent par mail, sont triés, rattachés au bon chantier, lus par l'IA, puis regroupés dans un récapitulatif envoyé à 7 h. Les documents qui ne sont pas des PV sont écartés, les cas douteux passent par une validation en un clic.</title>
+      <defs>
+        <pattern id="grille" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#E1E4E0" stroke-width="1"/></pattern>
+        <g id="doc"><path d="M-8-10h11l5 5v15h-16z" fill="#fff" stroke="#1C2A3A" stroke-width="1.6" stroke-linejoin="round"/><path d="M3-10v5h5" fill="none" stroke="#1C2A3A" stroke-width="1.6"/><path d="M-5-2h9M-5 2h9M-5 6h6" stroke="#9AA3AB" stroke-width="1.4"/></g>
+      </defs>
+      <rect width="1000" height="400" fill="url(#grille)"/>
+
+      <!-- chemins -->
+      <path d="M95 210H860" stroke="#C9CEC9" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+      <path d="M270 210V330" stroke="#C9CEC9" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+      <path d="M630 210V125H760V210" fill="none" stroke="#C9CEC9" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+
+      <g id="flux"></g>
+      <!-- postes -->
+      <g class="poste" data-i="0" transform="translate(95 210)">
+        <rect class="fond" x="-48" y="-48" width="96" height="96" rx="12"/>
+        <g class="ico"><rect x="-20" y="-14" width="40" height="28" rx="3"/><path d="M-20-12 0 3 20-12"/></g>
+        <text class="lbl" y="72" text-anchor="middle">Boîte mail</text>
+        <text class="sous" y="89" text-anchor="middle">transfert auto</text>
+      </g>
+      <g class="poste" data-i="1" transform="translate(270 210)">
+        <rect class="fond" x="-48" y="-48" width="96" height="96" rx="12"/>
+        <g class="ico"><path d="M-20-16h40L6 2v14l-12 6V2z"/></g>
+        <text class="lbl" y="-62" text-anchor="middle">Tri</text>
+      </g>
+      <g class="poste" data-i="2" transform="translate(450 210)">
+        <rect class="fond" x="-48" y="-48" width="96" height="96" rx="12"/>
+        <g class="ico"><path d="M-22-12h14l5 5h25v23h-44z"/><path d="M-12 4h10M-12 10h18"/></g>
+        <text class="lbl" y="72" text-anchor="middle">Bon chantier</text>
+        <text class="sous" y="89" text-anchor="middle">n° du PV · archivé</text>
+      </g>
+      <g class="poste" data-i="3" transform="translate(630 210)">
+        <rect class="fond" x="-48" y="-48" width="96" height="96" rx="12"/>
+        <g class="ico"><path d="M-14-20h20l8 8v32h-28z"/><path d="M-9-6h18M-9 2h18M-9 10h12" stroke="#C9CEC9"/></g>
+        <rect id="surligne" x="-11" y="-1" width="22" height="6" rx="1" fill="#E8641B" opacity=".75"/>
+        <text class="lbl" y="72" text-anchor="middle">Lecture IA</text>
+        <text class="sous" y="89" text-anchor="middle">lot menuiserie ext.</text>
+      </g>
+      <g class="poste" data-i="4" transform="translate(860 210)">
+        <rect class="fond" x="-48" y="-48" width="96" height="96" rx="12"/>
+        <g class="ico"><rect x="-20" y="-12" width="40" height="28" rx="3"/><path d="M-20-10 0 5 20-10"/></g>
+        <circle cx="20" cy="-20" r="13" fill="#E8641B"/>
+        <text x="20" y="-16" text-anchor="middle" class="mono" fill="#fff" style="font-size:11px">7h</text>
+        <text class="lbl" y="72" text-anchor="middle">Récap du matin</text>
+        <text class="sous" y="89" text-anchor="middle">un seul mail</text>
+      </g>
+
+      <!-- revue humaine -->
+      <g transform="translate(695 66)">
+        <rect x="-62" y="-30" width="124" height="60" rx="10" fill="#fff" stroke="#C9CEC9" stroke-width="1.5"/>
+        <g class="ico" transform="translate(-38 0)"><rect x="-9" y="-16" width="18" height="32" rx="3"/><path d="M-3 11h6"/></g>
+        <text x="-18" y="-4" class="lbl" style="font-size:13px">Un doute ?</text>
+        <text x="-18" y="13" class="sous" style="font-size:11px">validé en 1 clic</text>
+      </g>
+
+      <!-- écartés -->
+      <g transform="translate(270 345)">
+        <text x="0" y="40" class="sous" text-anchor="middle">pas un PV : plans, logos, factures</text>
+        <path d="M-34-4h68l-6 26h-56z" fill="#fff" stroke="#9AA3AB" stroke-width="1.6" stroke-linejoin="round"/>
+        <text x="0" y="14" class="mono" text-anchor="middle" fill="#6B7682">écarté</text>
+      </g>
+
+      <!-- destinataire -->
+      <g id="envoi" opacity="0">
+        <rect x="-20" y="-14" width="40" height="28" rx="3" fill="#E8641B"/>
+        <path d="M-20-12 0 3 20-12" fill="none" stroke="#fff" stroke-width="2"/>
+      </g>
+    </svg>
+    <div class="compteurs" aria-live="off">
+      <div><b id="n-recus">0</b><span>PV reçus cette semaine</span></div>
+      <div class="ign"><b id="n-ign">0</b><span>documents écartés</span></div>
+      <div class="rec"><b id="n-rec">0</b><span>PV résumés dans le récap</span></div>
+    </div>
+  </div>
+
+  <ol class="etapes" id="etapes">
+    <li><h2>Les PV arrivent</h2><p>Les mails des maîtres d'œuvre sont transférés automatiquement. Rien ne change dans les habitudes du dirigeant.</p></li>
+    <li><h2>Tri</h2><p>Plans, logos, factures et pièces sans rapport sont écartés. Seuls les comptes-rendus passent.</p></li>
+    <li><h2>Bon chantier</h2><p>Le chantier et le numéro du PV sont reconnus, le document est archivé dans le bon dossier.</p></li>
+    <li><h2>Lecture IA</h2><p>Comparaison avec le PV précédent. Ne restent que le lot menuiserie extérieure, les infos générales utiles et la prochaine réunion.</p></li>
+    <li><h2>Récap à 7 h</h2><p>Un mail par jour, chantier par chantier, avec les convocations à ne pas rater.</p></li>
+  </ol>
+
+
+  </section>
+
+  <section aria-labelledby="t-inclus">
+    <div class="sec-tete">
+      <h2 id="t-inclus">Inclus dans l'installation</h2>
+      <p>La version qui tourne aujourd'hui en production, adaptée à votre lot, à vos entreprises et à vos chantiers.</p>
+    </div>
+    <ul class="inclus">
+      <li><b>Tri des pièces jointes</b><span>Plans, logos, factures et documents sans rapport sont écartés sans vous déranger.</span></li>
+      <li><b>Le bon chantier, le bon PV</b><span>Chantier et numéro reconnus, même quand le nom est écrit de plusieurs façons.</span></li>
+      <li><b>Lecture limitée à votre lot</b><span>Comparaison avec le PV précédent : seules les nouveautés vous sont signalées.</span></li>
+      <li><b>Récap du matin mis en page</b><span>Un mail clair, chantier par chantier, lisible sur téléphone comme sur ordinateur.</span></li>
+      <li><b>Validation en un clic</b><span>Quand l'outil hésite (nouveau chantier, nom ambigu), il vous pose la question au lieu de deviner.</span></li>
+      <li><b>Archivage des PV</b><span>Chaque PV est rangé dans votre Dropbox ou votre Google Drive, sous son nom d'origine.</span></li>
+      <li><b>Reprise des chantiers en cours</b><span>Au démarrage, vos chantiers et leur dernier PV sont enregistrés, sans avalanche de mails.</span></li>
+      <li><b>Garde-fous</b><span>Arrêt automatique en cas d'envoi anormal, alertes techniques, sauvegarde chaque nuit.</span></li>
+      <li><b>Gros documents</b><span>Les PV de plusieurs dizaines de pages sont traités sans blocage.</span></li>
+      <li><b>Tout est à votre nom</b><span>Serveur, comptes et coffre de mots de passe vous appartiennent. Guide d'utilisation fourni.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="t-deroule">
+    <div class="sec-tete"><h2 id="t-deroule">Déroulé</h2></div>
+    <ol class="deroule">
+      <li><b>Cadrage</b><span class="duree">1 h</span><span>Votre lot, les entreprises que vous représentez, vos chantiers en cours, l'heure du récap.</span></li>
+      <li><b>Installation</b><span class="duree">délai fixé au devis</span><span>Mise en place sur un serveur à votre nom et reprise de vos chantiers en cours.</span></li>
+      <li><b>Rodage</b><span class="duree">2 semaines</span><span>Je surveille chaque PV traité et j'ajuste. Ajustements inclus.</span></li>
+      <li><b>Garantie</b><span class="duree">1 mois</span><span>Tout défaut constaté est corrigé sans frais.</span></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="t-couts" id="couts">
+    <div class="sec-tete">
+      <h2 id="t-couts">Tous les coûts</h2>
+      <p>Pas de frais cachés : le serveur et l'IA sont des abonnements à votre nom, payés directement aux fournisseurs, sans marge de ma part.</p>
+    </div>
+    <table class="tab">
+      <tr><th>Installation</th><td>Cadrage, mise en place, reprise des chantiers en cours, rodage et garantie d'un mois.</td><td class="p">3 000 €</td></tr>
+      <tr><th>Serveur</th><td>Abonnement d'hébergement à votre nom.<small>Payé directement à l'hébergeur.</small></td><td class="p">≈ 10 €/mois</td></tr>
+      <tr><th>IA</th><td>Crédits de lecture des PV, selon le volume.<small>Environ 100 € par an pour une cinquantaine de PV par semaine.</small></td><td class="p">≈ 100 €/an</td></tr>
+      <tr><th>Maintenance (facultative)</th><td>Surveillance, mises à jour mensuelles, correction des dysfonctionnements, jusqu'à 1 h d'intervention par mois.<small>Payée d'avance à l'année, un mois offert. Au-delà d'1 h par mois : 45 €/h.</small></td><td class="p">660 €/an</td></tr>
+      <tr><th>Sans maintenance</th><td>Intervention à la demande, avec un court rapport.</td><td class="p">50 €/h<small>minimum 1 h</small></td></tr>
+    </table>
+  </section>
+
+  <section aria-labelledby="t-devis" id="devis">
+    <div class="sec-tete">
+      <h2 id="t-devis">Composer mon devis</h2>
+      <p>Les options s'ajoutent à l'installation, à la commande ou plus tard. Plus vous en prenez, plus la remise sur les options augmente.</p>
+    </div>
+    <div class="composeur">
+      <ol class="options" id="options"></ol>
+      <aside class="resume-devis" aria-live="polite">
+        <div class="lignes">
+          <div><span>Installation</span><span>3 000 €</span></div>
+          <div><span id="r-nb">Aucune option</span><span id="r-sous">0 €</span></div>
+          <div class="remise"><span id="r-remise-l">Remise sur les options</span><span id="r-remise">0 €</span></div>
+        </div>
+        <div class="total" id="r-total">3 000 €</div>
+        <p class="indice" id="r-indice"></p>
+        <p class="paliers">Remise : 2 options −10 %, 3 à 5 −15 %, 6 à 8 −20 %, 9 et plus −25 %.</p>
+        <label class="champ" for="entreprise">Votre entreprise<input id="entreprise" type="text" autocomplete="organization" placeholder="Nom de l'entreprise"></label>
+        <button class="btn" id="envoyer" type="button">Demander le devis</button>
+        <div id="apres" hidden>
+          <p>Votre messagerie s'ouvre avec la demande prête à envoyer. Si elle ne s'ouvre pas, copiez ce texte et envoyez-le à <span class="adr" id="adr"></span> :</p>
+          <textarea id="texte-mail" readonly aria-label="Texte de la demande"></textarea>
+          <button class="btn clair" id="copier" type="button">Copier le texte</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-besoins">
+    <div class="sec-tete"><h2 id="t-besoins">Ce qu'il faut de votre côté</h2></div>
+    <ul class="besoins">
+      <li>Une adresse Gmail dédiée, à votre nom, que nous créons ensemble. Votre boîte habituelle lui transfère automatiquement une copie de vos mails : vous ne changez rien à vos habitudes.</li>
+      <li>Un espace Dropbox ou Google Drive pour l'archivage.</li>
+      <li>1 h pour le cadrage, puis quelques minutes par jour pendant le rodage pour répondre aux questions de l'outil.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="t-faq">
+    <div class="sec-tete"><h2 id="t-faq">Questions fréquentes</h2></div>
+    <div class="faq">
+      <details><summary>Et si l'IA se trompe ?</summary><p>Quand l'outil n'est pas sûr, il vous demande au lieu de deviner. Pendant le rodage, je vérifie chaque PV traité et je corrige la cause de chaque erreur. Le PV d'origine reste toujours accessible.</p></details>
+      <details><summary>Où vont mes documents ?</summary><p>Ils sont traités sur votre serveur et archivés dans votre stockage. Pour la lecture, le texte passe par l'API d'OpenAI, dont les données ne servent pas à entraîner les modèles.</p></details>
+      <details><summary>Et si je change de prestataire ?</summary><p>Tout est à votre nom : serveur, comptes, stockage et coffre de mots de passe. Vous gardez l'outil et ses accès.</p></details>
+      <details><summary>Ça marche pour un autre lot que la menuiserie ?</summary><p>Oui. La lecture se règle sur votre lot et sur les entreprises que vous représentez. C'est l'objet du cadrage.</p></details>
+    </div>
+  </section>
+
+  <footer>
+    <span><b>ES Labs</b> · Etienne Sarrail, micro-entrepreneur · <span id="contact"></span></span>
+    <span class="mentions">TVA non applicable, art. 293 B du CGI.</span>
+  </footer>
+</div>
+
+<script>
+
+(() => {
+  "use strict";
+  const NS = "http://www.w3.org/2000/svg";
+  const flux = document.getElementById("flux"), envoi = document.getElementById("envoi");
+  const postes = [...document.querySelectorAll(".poste")], etapes = [...document.querySelectorAll("#etapes li")];
+  const nR = document.getElementById("n-recus"), nI = document.getElementById("n-ign"), nC = document.getElementById("n-rec");
+  const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Chemins : [x, y] successifs. Vitesse constante.
+  const P = {
+    pv:     [[20, 210], [95, 210], [270, 210], [450, 210], [630, 210], [860, 210]],
+    ecarte: [[20, 210], [95, 210], [270, 210], [270, 345]],
+    doute:  [[20, 210], [95, 210], [270, 210], [450, 210], [630, 210], [630, 125], [760, 125], [760, 210], [860, 210]]
+  };
+  const VITESSE = 150; // unités SVG par seconde
+  const longueur = pts => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
+  function pointA(pts, d) {
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1], [bx, by] = pts[i], l = Math.hypot(bx - ax, by - ay);
+      if (d <= l) return [ax + (bx - ax) * d / l, ay + (by - ay) * d / l, i];
+      d -= l;
+    }
+    const f = pts[pts.length - 1]; return [f[0], f[1], pts.length - 1];
+  }
+
+  // Une « semaine » : 47 PV (dont 3 douteux) + 9 documents écartés, puis l'envoi du récap.
+  const SEMAINE = [];
+  for (let i = 0; i < 56; i++) SEMAINE.push(i % 6 === 2 ? "ecarte" : (i % 17 === 9 ? "doute" : "pv"));
+  const INTERVALLE = 0.32, DUREE_CYCLE = SEMAINE.length * INTERVALLE + 7.5;
+
+  let jetons = [], t0 = null, cycle = -1, recus = 0, ign = 0, rec = 0, lancees = 0, envoiDebut = null;
+  function viderSemaine() {
+    jetons.forEach(j => j.el.remove()); jetons = [];
+    recus = ign = rec = lancees = 0; envoiDebut = null; envoi.setAttribute("opacity", 0);
+    maj();
+  }
+  function maj() { nR.textContent = recus; nI.textContent = ign; nC.textContent = rec; }
+  function surligner(i) {
+    postes.forEach((p, k) => p.classList.toggle("actif", k === i));
+    etapes.forEach((e, k) => e.classList.toggle("actif", k === i));
+  }
+  function lancer(type) {
+    const el = document.createElementNS(NS, "use");
+    el.setAttribute("href", "#doc");
+    flux.appendChild(el);
+    jetons.push({ el, type, pts: P[type], L: longueur(P[type]), d: 0, compte: false });
+  }
+  let precedent = null, focus = 0;
+  function image(ts) {
+    if (t0 === null) t0 = ts;
+    const t = (ts - t0) / 1000, c = Math.floor(t / DUREE_CYCLE), tc = t - c * DUREE_CYCLE;
+    const dt = precedent === null ? 0 : Math.min(.05, (ts - precedent) / 1000); precedent = ts;
+    if (c !== cycle) { cycle = c; viderSemaine(); }
+    focus = Math.floor(tc / 2.4) % 5;
+
+    while (lancees < SEMAINE.length && tc >= lancees * INTERVALLE) lancer(SEMAINE[lancees++]);
+
+    jetons.forEach(j => {
+      if (j.fini) return;
+      j.d += VITESSE * dt * (j.type === "doute" && j.d > 640 && j.d < 900 ? .55 : 1);
+      const [x, y, seg] = pointA(j.pts, j.d);
+      j.el.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+      if (!j.compte && x >= 95) { j.compte = true; if (j.type !== "ecarte") recus++; maj(); }
+      if (j.d >= j.L) {
+        j.fini = true;
+        if (j.type === "ecarte") { ign++; j.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: "forwards" }); }
+        else { rec++; j.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: "forwards" }); }
+        maj();
+      }
+    });
+
+    // Fin de semaine : le récap part à 7 h vers le dirigeant.
+    const tousFinis = lancees === SEMAINE.length && jetons.every(j => j.fini);
+    if (tousFinis && envoiDebut === null) envoiDebut = tc;
+    if (envoiDebut !== null) {
+      const k = Math.min(1, (tc - envoiDebut) / 1.6);
+      const x = 860 + 120 * k, y = 210 - 60 * Math.sin(k * Math.PI);
+      envoi.setAttribute("transform", `translate(${x} ${y}) scale(${1 - .3 * k})`);
+      envoi.setAttribute("opacity", k < .85 ? 1 : (1 - k) / .15);
+      focus = 4;
+    }
+    surligner(focus);
+    requestAnimationFrame(image);
+  }
+
+  if (reduit) {
+    // Mouvement réduit : état final d'une semaine, sans animation.
+    recus = 47; ign = 9; rec = 47; maj();
+    [[150, 210], [360, 210], [540, 210], [270, 300], [700, 125], [760, 170]].forEach(([x, y]) => { const el = document.createElementNS(NS, "use"); el.setAttribute("href", "#doc"); el.setAttribute("transform", `translate(${x} ${y})`); flux.appendChild(el); });
+    surligner(4);
+  } else requestAnimationFrame(image);
+})();
+
+</script>
+<script>
+(() => {
+  "use strict";
+  // ===== CONFIG =====
+  const CONFIG = {
+    contact: "raxolabs@gmail.com",
+    installation: 3000,
+    paliers: [[1, 0], [2, 10], [3, 15], [6, 20], [9, 25]],
+    options: [
+      ["Image du tableau de convocation + lien vers le PV", 250, "Le récap montre le tableau de convocation découpé dans le PV et un lien vers le PV complet. Vous voyez d'un coup d'œil si vous êtes convoqué."],
+      ["Convocations dans l'agenda + rappel la veille", 200, "Chaque convocation arrive avec un rendez-vous à ajouter en un clic à l'agenda du téléphone, avec un rappel la veille."],
+      ["Un dossier par chantier", 200, "Les PV sont rangés automatiquement dans un dossier au nom de leur chantier."],
+      ["Alerte « autre entreprise sur le lot »", 150, "Un mail vous prévient quand un PV attribue des points de votre lot à une entreprise que vous ne suivez pas sur ce chantier."],
+      ["PV marqués « lus » dans votre boîte habituelle", 250, "Une fois un PV traité, son mail passe en « lu ». Ce qui reste non lu demande vraiment votre attention. Selon votre messagerie."],
+      ["Récap d'un chantier à la demande", 200, "Vous envoyez « état Les Pins » par mail et recevez les points encore ouverts du chantier et la prochaine réunion."],
+      ["Alerte « point qui traîne »", 200, "Le récap signale un point resté ouvert depuis plusieurs PV (ex. « validation échantillon en attente depuis 5 semaines »)."],
+      ["Échéances repérées + rappel", 200, "Les « à fournir avant le … » qui vous concernent sont repérés, avec un rappel quelques jours avant."],
+      ["Bilan du lundi", 150, "Chaque lundi, l'état de tous vos chantiers : points encore ouverts et prochaines réunions."],
+      ["Destinataire supplémentaire", 100, "Le récap, ou celui d'un seul chantier, part aussi à une autre personne (secrétaire, chef d'équipe)."],
+      ["Clôture d'un chantier, même renommé", 150, "Un lien pour terminer un chantier : ses PV suivants sont ignorés, même s'il change de nom à la livraison."]
+    ]
+  };
+  // ==================
+
+  const $ = id => document.getElementById(id);
+  const eur = n => n.toLocaleString("fr-FR", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + " €";
+  $("adr").textContent = CONFIG.contact;
+  $("contact").textContent = CONFIG.contact;
+
+  const liste = $("options");
+  CONFIG.options.forEach(([nom, prix, desc], i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<label class="opt" for="o-${i}"><input type="checkbox" id="o-${i}" value="${i}"><span><span class="nom"></span><span class="desc"></span></span><span class="prix">${eur(prix)}</span></label>`;
+    li.querySelector(".nom").textContent = nom;
+    li.querySelector(".desc").textContent = desc;
+    liste.appendChild(li);
+  });
+
+  function etat() {
+    const choix = [...liste.querySelectorAll("input:checked")].map(c => Number(c.value));
+    const n = choix.length, sous = choix.reduce((s, i) => s + CONFIG.options[i][1], 0);
+    let pct = 0; CONFIG.paliers.forEach(([des, p]) => { if (n >= des) pct = p; });
+    const remise = Math.round(sous * pct) / 100;
+    return { choix, n, sous, pct, remise, total: CONFIG.installation + sous - remise };
+  }
+  function rendre() {
+    const s = etat();
+    $("r-nb").textContent = s.n ? `${s.n} option${s.n > 1 ? "s" : ""}` : "Aucune option";
+    $("r-sous").textContent = eur(s.sous);
+    $("r-remise-l").textContent = s.pct ? `Remise −${s.pct} %` : "Remise sur les options";
+    $("r-remise").textContent = s.remise ? "−" + eur(s.remise) : "0 €";
+    $("r-total").textContent = eur(s.total);
+    const suiv = CONFIG.paliers.find(([des, p]) => des > s.n && p > s.pct);
+    $("r-indice").textContent = suiv ? (s.n ? `Encore ${suiv[0] - s.n} option${suiv[0] - s.n > 1 ? "s" : ""} pour passer à −${suiv[1]} %.` : "") : "Remise maximale atteinte.";
+    $("apres").hidden = true;
+  }
+  liste.addEventListener("change", rendre);
+  rendre();
+
+  function message() {
+    const s = etat(), ent = $("entreprise").value.trim();
+    const lignes = [
+      "Bonjour,", "",
+      "Je souhaite recevoir un devis pour le suivi automatique des PV de chantier.", "",
+      "Installation : " + eur(CONFIG.installation),
+      ...(s.n ? ["Options :", ...s.choix.map(i => "- " + CONFIG.options[i][0] + " : " + eur(CONFIG.options[i][1])), "Remise" + (s.pct ? " (−" + s.pct + " %)" : "") + " : " + (s.remise ? "−" + eur(s.remise) : "0 €")] : ["Options : aucune pour l'instant"]),
+      "Total indicatif : " + eur(s.total), "",
+      "Cordialement,", ent || ""
+    ];
+    return { objet: "Devis suivi des PV de chantier" + (ent ? " — " + ent : ""), corps: lignes.join("\n").trim() };
+  }
+  $("envoyer").addEventListener("click", () => {
+    const m = message();
+    $("texte-mail").value = "Objet : " + m.objet + "\n\n" + m.corps;
+    $("apres").hidden = false;
+    location.href = "mailto:" + CONFIG.contact + "?subject=" + encodeURIComponent(m.objet) + "&body=" + encodeURIComponent(m.corps);
+  });
+  $("copier").addEventListener("click", async () => {
+    const t = $("texte-mail");
+    try { await navigator.clipboard.writeText(t.value); $("copier").textContent = "Texte copié"; }
+    catch (e) { t.focus(); t.select(); $("copier").textContent = "Texte sélectionné : Ctrl+C"; }
+  });
+})();
+</script>
+</body>
+</html>
